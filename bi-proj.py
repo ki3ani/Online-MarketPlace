@@ -1,7 +1,8 @@
 import pandas as pd
 from scipy.stats import zscore
 import numpy as np
-
+import scipy.stats as stats
+from scipy.stats import kruskal
 
 # Define the file paths for the datasets
 file_paths = {
@@ -157,3 +158,39 @@ print(f"Mean Total Cost: {mean_cost}")
 print(f"Median Total Cost: {median_cost}")
 print(f"Standard Deviation of Total Cost: {std_dev_cost}")
 print(f"Correlation between Total Cost and Product ID: {correlation}")
+
+
+
+# Find the three products with the most data points
+top_products = final_df['product_id'].value_counts().index[:3]
+
+# Select the total cost data for these products
+product1 = final_df[final_df['product_id'] == top_products[0]]['total_cost']
+product2 = final_df[final_df['product_id'] == top_products[1]]['total_cost']
+product3 = final_df[final_df['product_id'] == top_products[2]]['total_cost']
+
+# Perform ANOVA
+f_val, p_val = stats.f_oneway(product1, product2, product3)
+
+print(f"F-value: {f_val}")
+print(f"P-value: {p_val}")
+
+# Create a contingency table
+contingency_table = pd.crosstab(final_df['product_id'], final_df['customer_unique_id'])
+
+# Perform Chi-square test
+chi2, p_val, dof, expected = stats.chi2_contingency(contingency_table)
+
+print(f"Chi-square statistic: {chi2}")
+print(f"P-value: {p_val}")
+
+
+# Correlation with price
+correlation_price = final_df['total_cost'].corr(final_df['price'])
+print(f"Correlation with Price: {correlation_price}")
+
+# Correlation with freight_value
+correlation_freight = final_df['total_cost'].corr(final_df['freight_value'])
+print(f"Correlation with Freight Value: {correlation_freight}")
+
+
