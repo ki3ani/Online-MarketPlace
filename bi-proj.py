@@ -6,6 +6,7 @@ from scipy.stats import kruskal
 import scikit_posthocs as sp
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 # Define the file paths for the datasets
@@ -277,3 +278,40 @@ final_df[numerical_cols] = final_df[numerical_cols].apply(zscore)
 
 # Print the first 5 rows of the DataFrame to confirm transformations
 print("\nFirst 5 rows after transformations:\n", final_df.head())
+
+
+# Create user-item interaction matrix
+interaction_matrix = final_df.pivot_table(index='customer_id', columns='product_id', values='order_item_id', fill_value=0, aggfunc='count')
+
+
+# Print unique customer IDs
+print(interaction_matrix.index.unique())
+
+
+
+# Calculate item-item similarity matrix
+item_similarity = cosine_similarity(interaction_matrix.T)
+item_similarity = pd.DataFrame(item_similarity, index=interaction_matrix.columns, columns=interaction_matrix.columns)
+
+# Function to get the most similar items
+def get_similar_items(product_id, n=5):
+    similar_items = item_similarity[product_id].sort_values(ascending=False)[:n+1]
+    similar_items = similar_items.index[similar_items.index != product_id]  # Exclude the item itself
+    return similar_items
+
+# Function to recommend items for a user
+def recommend_items(user_id, n=5):
+    if user_id not in interaction_matrix.index:
+        print(f"No data available for user ID: {user_id}")
+        return []
+    user_items = interaction_matrix.loc[user_id]
+    not_interacted_items = user_items[user_items == 0].index
+    item_scores = item_similarity[not_interacted_items].sum(axis=1)
+    recommended_items = item_scores.nlargest(n)
+    return recommended_items.index
+
+    
+# Get recommendations for a specific user
+recommended_items = recommend_items(-1.9176302812675063)
+print(f"Recommended items for user '-1.9176302812675063': {recommended_items}")
+
