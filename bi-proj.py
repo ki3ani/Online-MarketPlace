@@ -3,6 +3,10 @@ from scipy.stats import zscore
 import numpy as np
 import scipy.stats as stats
 from scipy.stats import kruskal
+import scikit_posthocs as sp
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 # Define the file paths for the datasets
 file_paths = {
@@ -161,19 +165,20 @@ print(f"Correlation between Total Cost and Product ID: {correlation}")
 
 
 
-# Find the three products with the most data points
-top_products = final_df['product_id'].value_counts().index[:3]
+# Select specific product_ids
+product_ids = [1633, 27232, 6138]  # replace with your chosen product_ids
 
 # Select the total cost data for these products
-product1 = final_df[final_df['product_id'] == top_products[0]]['total_cost']
-product2 = final_df[final_df['product_id'] == top_products[1]]['total_cost']
-product3 = final_df[final_df['product_id'] == top_products[2]]['total_cost']
+product1 = final_df[final_df['product_id'] == product_ids[0]]['total_cost']
+product2 = final_df[final_df['product_id'] == product_ids[1]]['total_cost']
+product3 = final_df[final_df['product_id'] == product_ids[2]]['total_cost']
 
 # Perform ANOVA
 f_val, p_val = stats.f_oneway(product1, product2, product3)
 
 print(f"F-value: {f_val}")
 print(f"P-value: {p_val}")
+
 
 # Create a contingency table
 contingency_table = pd.crosstab(final_df['product_id'], final_df['customer_unique_id'])
@@ -194,3 +199,81 @@ correlation_freight = final_df['total_cost'].corr(final_df['freight_value'])
 print(f"Correlation with Freight Value: {correlation_freight}")
 
 
+# Perform Kruskal-Wallis H test
+h_val, p_val = stats.kruskal(product1, product2, product3)
+
+print(f"H-value: {h_val}")
+print(f"P-value: {p_val}")
+
+
+# Prepare data
+data = pd.concat([product1, product2, product3])
+groups = ['product1']*len(product1) + ['product2']*len(product2) + ['product3']*len(product3)
+df = pd.DataFrame({'values': data, 'groups': groups})
+
+# Perform Dunn's test
+posthoc = sp.posthoc_dunn(df, val_col='values', group_col='groups', p_adjust='bonferroni')
+
+print(posthoc)
+
+# Histogram for 'total_cost'
+plt.figure(figsize=(10, 6))
+plt.hist(final_df['total_cost'], bins=30, edgecolor='black')
+plt.title('Total Cost Distribution')
+plt.xlabel('Total Cost')
+plt.ylabel('Frequency')
+plt.show()
+
+# Boxplot for 'total_cost'
+plt.figure(figsize=(10, 6))
+sns.boxplot(final_df['total_cost'])
+plt.title('Total Cost Boxplot')
+plt.show()
+
+# Scatter plot for 'total_cost' vs 'price'
+plt.figure(figsize=(10, 6))
+plt.scatter(final_df['total_cost'], final_df['price'])
+plt.title('Total Cost vs Price')
+plt.xlabel('Total Cost')
+plt.ylabel('Price')
+plt.show()
+
+# Scatter plot for 'total_cost' vs 'freight_value'
+plt.figure(figsize=(10, 6))
+plt.scatter(final_df['total_cost'], final_df['freight_value'])
+plt.title('Total Cost vs Freight Value')
+plt.xlabel('Total Cost')
+plt.ylabel('Freight Value')
+plt.show()
+
+# Heatmap for the correlation matrix of the DataFrame
+plt.figure(figsize=(10, 6))
+sns.heatmap(final_df.corr(), annot=True, fmt=".2f", cmap='coolwarm')
+plt.title('Correlation Matrix Heatmap')
+plt.show()
+
+
+print(final_df.columns)
+
+
+
+# Check for missing values
+missing_values = final_df.isnull().sum()
+print("Missing values per column:\n", missing_values)
+
+# Impute missing values
+for column in final_df.columns:
+    if final_df[column].dtype == 'object':  # Categorical data
+        final_df[column] = final_df[column].fillna(final_df[column].mode()[0])
+    else:  # Numerical data
+        final_df[column] = final_df[column].fillna(final_df[column].median())
+
+# Confirm that there are no more missing values
+print("\nMissing values after imputation:\n", final_df.isnull().sum())
+
+# Data transformation
+numerical_cols = final_df.select_dtypes(include=[np.number]).columns
+final_df[numerical_cols] = final_df[numerical_cols].apply(zscore)
+
+# Print the first 5 rows of the DataFrame to confirm transformations
+print("\nFirst 5 rows after transformations:\n", final_df.head())
