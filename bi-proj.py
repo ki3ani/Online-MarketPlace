@@ -138,3 +138,22 @@ for name, df in loaded_data.items():
     print(df.isnull().sum())
     print("\n")
 
+# Frequency: count the number of purchases for each product
+product_frequency = final_df['product_id'].value_counts()
+
+# Central tendency: calculate the mean and median total cost
+mean_cost = final_df['total_cost'].mean()
+median_cost = final_df['total_cost'].median()
+
+# Distribution: calculate the standard deviation of the total cost
+std_dev_cost = final_df['total_cost'].std()
+
+# Relationship: calculate the correlation between total cost and product_id
+# Note: this requires product_id to be a numeric type. If it's a categorical type, you'll need to convert it to numeric.
+correlation = final_df['total_cost'].corr(final_df['product_id'])
+
+print(f"Product Frequency:\n{product_frequency}\n")
+print(f"Mean Total Cost: {mean_cost}")
+print(f"Median Total Cost: {median_cost}")
+print(f"Standard Deviation of Total Cost: {std_dev_cost}")
+print(f"Correlation between Total Cost and Product ID: {correlation}")
