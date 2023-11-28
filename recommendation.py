@@ -310,8 +310,10 @@ def recommend_items(user_id, n=5):
     recommended_items = item_scores.nlargest(n)
     return recommended_items.index
 
-    
+
 # Get recommendations for a specific user
 recommended_items = recommend_items(-1.9176302812675063)
 print(f"Recommended items for user '-1.9176302812675063': {recommended_items}")
+
+
 
